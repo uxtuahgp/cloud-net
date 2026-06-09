@@ -37,6 +37,11 @@ variable "private_cidr" {
   description = "private subnet cidr"
 }
 
+variable "nat_ip" {
+  type        = string
+  default     = "192.168.10.254"
+  description = "NAT instance IP"
+}
 
 variable "vpc_subnet_pub_name" {
   type        = string

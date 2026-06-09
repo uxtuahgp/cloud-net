@@ -1,10 +1,10 @@
-resource "yandex_vpc_network" "cloud-net" {
+resource "yandex_vpc_network" "cloud_net" {
   name = var.vpc_net_name
 }
 resource "yandex_vpc_subnet" "public_sub" {
   name           = var.vpc_subnet_pub_name
   zone           = var.default_zone
-  network_id     = yandex_vpc_network.cloud-net.id
+  network_id     = yandex_vpc_network.cloud_net.id
   v4_cidr_blocks = var.public_cidr
 }
 
@@ -12,8 +12,9 @@ resource "yandex_vpc_subnet" "public_sub" {
 resource "yandex_vpc_subnet" "private_sub" {
   name           = var.vpc_subnet_pvt_name
   zone           = var.default_zone
-  network_id     = yandex_vpc_network.cloud-net.id
+  network_id     = yandex_vpc_network.cloud_net.id
   v4_cidr_blocks = var.private_cidr
+  route_table_id = yandex_vpc_route_table.cloud_rt.id
 }
 
 
@@ -41,16 +42,25 @@ resource "yandex_compute_instance" "nat" {
   scheduling_policy {
     preemptible = true
   }
+
   network_interface {
     subnet_id  = yandex_vpc_subnet.public_sub.id
     nat        = true
-    ip_address = "192.168.10.254"
+    ip_address = var.nat_ip
   }
 
 
   metadata = {
     serial-port-enable = var.vms_md.serial
     ssh-keys           = "core:${var.vms_md.key}"
+  }
+}
+
+resource "yandex_vpc_route_table" "cloud_rt" {
+  network_id = yandex_vpc_network.cloud_net.id
+  static_route {
+    destination_prefix = "0.0.0.0/0"
+    next_hop_address   = var.nat_ip
   }
 }
 
